@@ -16,6 +16,7 @@ class Session:
         self.nickname = gen_nickname(memory.get("primary_emotion", "calm"))
         self.color = gen_color()
         self.history: list[dict] = []
+        self.embedding: list[float] | None = None  # 语义向量（懒计算，匹配时填充）
 
 
 class SessionManager:

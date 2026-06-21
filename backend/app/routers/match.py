@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from ..session.manager import sessions
 from ..matching.store import hybrid_match
+from ..matching.embedding import embed_memory
 from ..identity import gen_nickname
 
 router = APIRouter()
@@ -22,10 +23,19 @@ async def match(req: MatchReq):
     if req.memory.get("safety_level") == "crisis":
         return {"status": "crisis"}
     me = sessions.upsert(req.user_id, req.memory)
+    me.embedding = await embed_memory(me.memory)  # 真实语义向量（失败返回 None → 回退哈希）
     cands = sessions.waiting(exclude=req.user_id)
     if cands:
+        # 候选一般在自己 /api/match 时已算过向量；漏算的当场补一次（缓存命中则秒回）
+        for s in cands:
+            if s.embedding is None:
+                s.embedding = await embed_memory(s.memory)
         idx, score, pts = hybrid_match(
-            me.memory, [s.memory for s in cands], [s.created_at for s in cands]
+            me.memory,
+            [s.memory for s in cands],
+            [s.created_at for s in cands],
+            me_vec=me.embedding,
+            cand_vecs=[s.embedding for s in cands],
         )
         waited = time.time() - me.created_at
         thr = THRESH_FULL if waited < 15 else THRESH_LOW

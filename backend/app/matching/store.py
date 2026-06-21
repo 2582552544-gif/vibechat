@@ -37,6 +37,16 @@ def _vcos(a: list[float], b: list[float]) -> float:
     return dot / (na * nb) if na and nb else 0.0
 
 
+# 真实 embedding（text-embedding-3-small）的余弦不以 0 为基线：实测无关短文 ~0.20、
+# 语义相近 ~0.58。把 [LOW, HIGH] 线性拉伸并截断到 [0,1]，让"无关"→0、"很像"→~0.85，
+# 与旧哈希向量（以 0 为中心）的分数尺度对齐，匹配阈值无需改动。
+_EMB_LOW, _EMB_HIGH = 0.20, 0.65
+
+
+def _emb_sim(cos: float) -> float:
+    return max(0.0, min(1.0, (cos - _EMB_LOW) / (_EMB_HIGH - _EMB_LOW)))
+
+
 def _kw_cos(a: list[str], b: list[str], df: dict, n: int) -> float:
     def tfidf(toks: list[str]) -> dict:
         tf: dict[str, int] = {}
@@ -78,23 +88,36 @@ def _sync_points(me: dict, other: dict) -> list[str]:
     return r[:4]
 
 
-def hybrid_match(me: dict, candidates: list[dict], created_ats: list[float]):
+def hybrid_match(
+    me: dict,
+    candidates: list[dict],
+    created_ats: list[float],
+    me_vec: list[float] | None = None,
+    cand_vecs: list[list[float] | None] | None = None,
+):
     """me: 我的 memory；candidates: 其他人的 memory 列表（与 created_ats 同序）。
+    me_vec / cand_vecs: 可选的真实语义 embedding（与 candidates 同序）；缺失则该项
+    回退到哈希投影向量，保证离线/无 key 时仍可匹配。
     返回 (best_index 或 None, score, sync_points)。
-    管道：关键词TF-IDF + 哈希向量 + 加权合并 + 基调过滤 + 等待加权。
+    管道：关键词TF-IDF + 语义向量(embedding，回退哈希) + 加权合并 + 基调过滤 + 等待加权。
     """
     if not candidates:
         return None, 0.0, []
     df, n = _build_df(candidates + [me])
-    me_vec = _hash_vec(_tokens(me))
+    me_hash = _hash_vec(_tokens(me))  # embedding 缺失时的回退
+    cand_vecs = cand_vecs or [None] * len(candidates)
     now = time.time()
     best_i, best_score = None, -1.0
     me_emo = me.get("primary_emotion")
     for i, c in enumerate(candidates):
         kw = _kw_cos(_tokens(me), _tokens(c), df, n)  # 关键词通道
-        vec = _vcos(me_vec, _hash_vec(_tokens(c)))  # 向量通道
+        cv = cand_vecs[i] if i < len(cand_vecs) else None
+        if me_vec and cv:
+            vec = _emb_sim(_vcos(me_vec, cv))  # 语义通道（真实 embedding，已归一化）
+        else:
+            vec = _vcos(me_hash, _hash_vec(_tokens(c)))  # 回退：哈希投影向量
         emo = 1.0 if me_emo and me_emo == c.get("primary_emotion") else 0.0  # 同情绪通道
-        merged = 0.30 * vec + 0.40 * kw + 0.30 * emo
+        merged = 0.40 * vec + 0.35 * kw + 0.25 * emo
         # 情绪基调过滤：正负向相反则压分
         if me.get("valence", 0) * c.get("valence", 0) < -0.2:
             merged *= 0.5
