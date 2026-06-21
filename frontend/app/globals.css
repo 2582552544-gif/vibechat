@@ -1,0 +1,324 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  VibeChat — Cinematic-dark + warm ember
+  Brand story: a warm desk lamp in the dark that sees you.
+  Single reserved accent (ember), literary serif for emotional headlines,
+  humanist CJK body. No purple-on-dark slop, no blinking status dots.
+*/
+
+:root {
+  --ink: #0b0a09;
+  --ink-2: #14110f;
+  --surface: rgba(255, 248, 240, 0.045);
+  --surface-2: rgba(255, 248, 240, 0.08);
+  --border: rgba(255, 240, 225, 0.1);
+  --border-strong: rgba(255, 240, 225, 0.18);
+
+  --text: #f3ede4;
+  --text-muted: #a39a8d;
+  --text-dim: #6f675c;
+
+  --ember: #ff7d4d;
+  --ember-soft: #ffb08a;
+  --ember-deep: #c0492a;
+
+  --glow: 0 0 48px rgba(255, 125, 77, 0.22);
+
+  --font-display: "Songti SC", "STSong", "Source Han Serif SC",
+    "Noto Serif SC", "Georgia", serif;
+  --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    system-ui, -apple-system, sans-serif;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  color: var(--text);
+  background: var(--ink);
+  font-family: var(--font-sans);
+}
+
+@layer components {
+  /* Warm-ink canvas: ember light bleeding from the top, grain over it. */
+  .canvas {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 70% at 50% -10%, rgba(255, 125, 77, 0.13) 0%, transparent 55%),
+      radial-gradient(90% 60% at 85% 110%, rgba(192, 73, 42, 0.1) 0%, transparent 60%),
+      var(--ink);
+  }
+  /* subtle film grain so the dark never looks flat / plasticky */
+  .canvas::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .display {
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
+  }
+
+  /* Buttons — pill, ember is the one place lift/glow is allowed. */
+  .btn-ember {
+    border-radius: 9999px;
+    background: linear-gradient(135deg, var(--ember) 0%, var(--ember-deep) 130%);
+    color: #1a0f0a;
+    font-weight: 600;
+    box-shadow: var(--glow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  }
+  .btn-ember:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 0 64px rgba(255, 125, 77, 0.4);
+  }
+  .btn-ember:disabled {
+    opacity: 0.35;
+    box-shadow: none;
+  }
+
+  .btn-ghost {
+    border-radius: 9999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+  }
+
+  .chip {
+    border-radius: 9999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    transition: all 0.18s ease;
+  }
+  .chip:hover {
+    border-color: var(--border-strong);
+    color: var(--text);
+  }
+  .chip-on {
+    background: rgba(255, 125, 77, 0.14);
+    border-color: var(--ember);
+    color: var(--ember-soft);
+    box-shadow: inset 0 0 0 1px rgba(255, 125, 77, 0.3);
+  }
+
+  .field {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--text);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .field::placeholder {
+    color: var(--text-dim);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--ember);
+    box-shadow: 0 0 0 3px rgba(255, 125, 77, 0.18);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-ember {
+    color: var(--ember);
+  }
+  .text-muted {
+    color: var(--text-muted);
+  }
+  .text-dim {
+    color: var(--text-dim);
+  }
+  /* ember gradient text for the brand mark / key numbers */
+  .ink-glow {
+    background: linear-gradient(135deg, var(--ember-soft) 0%, var(--ember) 60%, var(--ember-deep) 120%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+@layer components {
+  /* ---- Top navigation bar (structure + 小白 step guide) ---- */
+  .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(14px);
+    background: rgba(11, 10, 9, 0.72);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-brand {
+    font-family: var(--font-display);
+    letter-spacing: 0.04em;
+  }
+  .nav-step {
+    position: relative;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    transition: color 0.25s ease;
+  }
+  .nav-step .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background: var(--text-dim);
+    transition: all 0.25s ease;
+  }
+  .nav-step-on {
+    color: var(--ember-soft);
+  }
+  .nav-step-on .dot {
+    background: var(--ember);
+    box-shadow: 0 0 12px rgba(255, 125, 77, 0.8);
+  }
+  .nav-step-done {
+    color: var(--text-muted);
+  }
+  .nav-step-done .dot {
+    background: var(--ember-deep);
+  }
+
+  /* ---- "怎么玩" step cards on the landing (concrete guidance) ---- */
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .step-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+  }
+  .step-num {
+    font-family: var(--font-display);
+    width: 2.1rem;
+    height: 2.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255, 125, 77, 0.14);
+    color: var(--ember-soft);
+    border: 1px solid rgba(255, 125, 77, 0.3);
+  }
+}
+
+/* ---- 具象情绪场景：呼吸光球 + 环绕"频率"节点 + 搜寻涟漪 ---- */
+.scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.orb {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  filter: blur(2px);
+}
+.ripple {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+  animation: ripple 4s ease-out infinite;
+}
+@keyframes ripple {
+  0% {
+    width: 80px;
+    height: 80px;
+    opacity: 0.55;
+  }
+  100% {
+    width: 620px;
+    height: 620px;
+    opacity: 0;
+  }
+}
+.node {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 9999px;
+  transform-origin: 0 0;
+}
+@keyframes orbit {
+  from {
+    transform: rotate(0deg) translateX(var(--r)) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(var(--r)) rotate(-360deg);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fadeUp {
+  animation: fadeUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+.animate-breathe {
+  animation: breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes drift {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0);
+  }
+}
+.animate-drift {
+  animation: drift 7s ease-in-out infinite;
+}
