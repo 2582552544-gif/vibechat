@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { connectChat } from "@/lib/ws";
-import { getUserId, requestSuggest } from "@/lib/api";
+import { apiBase, getUserId, requestSuggest } from "@/lib/api";
 import { themeOf } from "@/lib/theme";
 
 interface Msg {
@@ -186,7 +186,7 @@ export default function ChatPage() {
       const messages = msgs
         .filter((m) => m.type === "chat")
         .map((m) => ({ mine: m.data.from === uid.current, text: m.data.content }));
-      const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/summary-image`, {
+      const r = await fetch(`${apiBase()}/api/summary-image`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

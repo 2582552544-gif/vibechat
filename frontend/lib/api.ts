@@ -1,4 +1,21 @@
-const API = process.env.NEXT_PUBLIC_API_BASE!;
+const CONFIGURED_API = process.env.NEXT_PUBLIC_API_BASE || "";
+
+function isLocalHost(host: string): boolean {
+  return host === "localhost" || host === "127.0.0.1" || host === "::1";
+}
+
+export function apiBase(): string {
+  if (typeof window === "undefined") return CONFIGURED_API;
+  const configured = CONFIGURED_API.trim().replace(/\/$/, "");
+  if (!configured) return "";
+  try {
+    const u = new URL(configured);
+    if (isLocalHost(u.hostname) && !isLocalHost(window.location.hostname)) return "";
+  } catch {
+    return configured;
+  }
+  return configured;
+}
 
 export interface UserMemory {
   emotion_detected: boolean;
@@ -21,7 +38,7 @@ export async function analyze(p: {
   mood?: string;
   situation_hint?: string;
 }): Promise<UserMemory> {
-  const r = await fetch(`${API}/api/analyze`, {
+  const r = await fetch(`${apiBase()}/api/analyze`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(p),
@@ -30,7 +47,7 @@ export async function analyze(p: {
 }
 
 export async function requestMatch(user_id: string, memory: UserMemory) {
-  const r = await fetch(`${API}/api/match`, {
+  const r = await fetch(`${apiBase()}/api/match`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ user_id, memory }),
@@ -39,7 +56,7 @@ export async function requestMatch(user_id: string, memory: UserMemory) {
 }
 
 export async function checkMatch(user_id: string) {
-  const r = await fetch(`${API}/api/match/check?user_id=${user_id}`);
+  const r = await fetch(`${apiBase()}/api/match/check?user_id=${user_id}`);
   return r.json();
 }
 
@@ -48,7 +65,7 @@ export async function requestSuggest(p: {
   my_type?: string;
   recent?: { mine: boolean; text: string }[];
 }): Promise<string[]> {
-  const r = await fetch(`${API}/api/suggest`, {
+  const r = await fetch(`${apiBase()}/api/suggest`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(p),
