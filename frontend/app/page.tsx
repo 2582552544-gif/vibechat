@@ -42,10 +42,12 @@ export default function Home() {
   const [situation, setSituation] = useState("");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function submit() {
     if (text.trim().length < 2) return;
     setLoading(true);
+    setError("");
     try {
       getUserId();
       const result = await analyze({
@@ -55,8 +57,9 @@ export default function Home() {
       });
       sessionStorage.setItem("vibe_memory", JSON.stringify(result));
       router.push(result.safety_level === "crisis" ? "/crisis" : "/result");
-    } catch {
+    } catch (e) {
       setLoading(false);
+      setError("连接失败了，请检查网络后重试。");
     }
   }
 
@@ -161,6 +164,10 @@ export default function Home() {
           >
             {loading ? "正在感受你的情绪…" : "寻找同频的人"}
           </button>
+
+          {error && (
+            <p className="text-center text-sm text-[var(--ember-soft)]">{error}</p>
+          )}
 
           <p className="text-center text-xs text-dim">你的输入不会被存储，也不会透露给任何人。</p>
         </div>
