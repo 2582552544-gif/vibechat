@@ -37,8 +37,10 @@ async def match(req: MatchReq):
             me_vec=me.embedding,
             cand_vecs=[s.embedding for s in cands],
         )
-        waited = time.time() - me.created_at
-        thr = THRESH_FULL if waited < 15 else THRESH_LOW
+        # 阈值随“候选方已等待多久”放宽：池里有人等久了就降低门槛优先成全
+        # （不能用 me.created_at——每次发起匹配都会 upsert 重置，永远≈0）。
+        cand_waited = time.time() - cands[idx].created_at if idx is not None else 0
+        thr = THRESH_FULL if cand_waited < 15 else THRESH_LOW
         if idx is not None and score >= thr:
             other = cands[idx]
             # 同房间昵称去重：两人同情绪时可能撞名，给对方换一个
@@ -65,6 +67,7 @@ async def match(req: MatchReq):
 
 @router.get("/api/match/check")
 async def check(user_id: str):
+    sessions.touch(user_id)  # 刷新心跳：标记该等待用户仍在线，避免被当幽灵淘汰
     s = sessions.get(user_id)
     if s and s.room_id:
         return {
